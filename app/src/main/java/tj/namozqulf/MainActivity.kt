@@ -1,10 +1,12 @@
 package tj.namozqulf
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -36,6 +38,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -71,6 +74,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 71)
+        }
         setContent { NamozScreen() }
     }
 }
@@ -126,12 +134,12 @@ private fun NamozScreen() {
                                     true
                                 ).show()
                             }
-                            if (index != prayerNames.lastIndex) androidx.compose.material3.HorizontalDivider(color = Color(0xFFF0F2EE))
+                            if (index != prayerNames.lastIndex) HorizontalDivider(color = Color(0xFFF0F2EE))
                         }
                     }
                 }
 
-                SectionTitle("Тамаркуз", "Барои вақти ор��мии худ давомнокиро интихоб кунед")
+                SectionTitle("Тамаркуз", "Барои вақти оромии худ давомнокиро интихоб кунед")
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -147,7 +155,7 @@ private fun NamozScreen() {
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text("Режими оромӣ", fontWeight = FontWeight.SemiBold, color = Ink)
-                                Text("Баъди оғози намоз худкор анҷом меёбад", fontSize = 12.sp, color = Muted)
+                                Text("20 дақ. пеш оғоз шуда, пас аз ин вақт анҷом меёбад", fontSize = 12.sp, color = Muted)
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

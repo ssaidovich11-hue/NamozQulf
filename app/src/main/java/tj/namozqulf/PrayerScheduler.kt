@@ -27,6 +27,7 @@ object PrayerScheduler {
         val parts = time.split(":")
         val hour = parts.getOrNull(0)?.toIntOrNull() ?: return
         val minute = parts.getOrNull(1)?.toIntOrNull() ?: return
+        if (hour !in 0..23 || minute !in 0..59) return
         val now = Calendar.getInstance()
         val trigger = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
@@ -47,14 +48,15 @@ object PrayerScheduler {
 
     fun reschedulePrayer(context: Context, index: Int) = schedulePrayer(context, index)
 
-    fun startFocus(context: Context) {
+    fun startFocus(context: Context, startsBeforePrayer: Boolean = false) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (!manager.isNotificationPolicyAccessGranted) return
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val previous = manager.currentInterruptionFilter
         prefs.edit().putInt("previous_filter", previous).apply()
         manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
-        scheduleFocusEnd(context, prefs.getInt("focus_minutes", 30))
+        val selectedMinutes = prefs.getInt("focus_minutes", 30)
+        scheduleFocusEnd(context, selectedMinutes + if (startsBeforePrayer) 20 else 0)
     }
 
     fun scheduleFocusEnd(context: Context, minutes: Int) {
@@ -98,15 +100,14 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val index = intent.getIntExtra("prayer_index", -1)
         if (index !in 0..4) return
-        val prefs = context.getSharedPreferences(PrayerScheduler.PREFS, Context.MODE_PRIVATE)
         val names = listOf("Бомдод", "Пешин", "Аср", "Шом", "Хуфтан")
         PrayerScheduler.reschedulePrayer(context, index)
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (manager.isNotificationPolicyAccessGranted) {
-            PrayerScheduler.startFocus(context)
-            PrayerScheduler.notify(context, 200 + index, "Вақти намози ${names[index]}", "Режими тамаркуз фаъол шуд.")
+            PrayerScheduler.startFocus(context, startsBeforePrayer = true)
+            PrayerScheduler.notify(context, 200 + index, "20 дақиқа то намози ${names[index]}", "Режими оромӣ оғоз шуд; зангҳои иҷозатдодашуда метавонанд расанд.")
         } else {
-            PrayerScheduler.notify(context, 200 + index, "20 дақиқа то намози ${names[index]}", "Барои фаъол кардани режими тамаркуз ба барнома иҷозати «Халал нарасонед» диҳед.")
+            PrayerScheduler.notify(context, 200 + index, "20 дақиқа то намози ${names[index]}", "Барои режими оромӣ ба НамозҚулф иҷозати «Халал нарасонед» диҳед.")
         }
     }
 }
@@ -114,7 +115,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 class FocusEndReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         PrayerScheduler.endFocus(context)
-        PrayerScheduler.notify(context, 700, "Режими тамаркуз анҷом ёфт", "Вақти интихобшуда ба охир расид.")
+        PrayerScheduler.notify(context, 700, "Режими оромӣ анҷом ёфт", "Вақти интихобшуда ба охир расид.")
     }
 }
 
